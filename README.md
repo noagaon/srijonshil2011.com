@@ -1,14 +1,14 @@
-# সৃজনশীল তরুণ সংঘ — GitHub Pages
+# সৃজনশীল তরুণ সংঘ — Updated Website
 
-Repository: `srijonshil2011`
+GitHub Pages: repository root থেকে deploy করুন।
 
-মূল ফাইল:
 - `index.html` — হোম পেইজ
-- `style.css` — সম্পূর্ণ ডিজাইন ও responsive layout
-- `script.js` — mobile menu, submenu এবং menu icons
-- `logo.png` — সৃজনশীল তরুণ সংঘের আসল লোগো
-- `hero.jpg` — হোম পেইজের Hero ছবি
-- `membership-banner.png` — সদস্য নিবন্ধন পেইজের ব্যানার
+- `membership.html` — সদস্য আবেদন পরিচিতি
+- `application-form.html` — পূরণযোগ্য ওয়েব ফরম
+- `member-application-form-original.pdf` — মূল PDF নমুনা
+- `membership-banner.png` — সদস্য আবেদন পেইজের ব্যানার
+- `logo.png` — সংগঠনের আসল লোগো
+- `style.css` — responsive design
+- `script.js` — mobile menu/dropdown
 
-GitHub Pages-এ `main` branch-এর root (`/`) থেকে Deploy করুন।
-Font Awesome আইকনের জন্য CDN ব্যবহৃত হয়েছে।
+Font Awesome ও Google Fonts CDN ব্যবহার করা হয়েছে।
