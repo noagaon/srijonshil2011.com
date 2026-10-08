@@ -126,12 +126,59 @@ document.addEventListener('DOMContentLoaded',()=>{
     window.addEventListener('resize',()=>{if(window.innerWidth>1000) closeMenu();});
   }
 
+  const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzTWo1I6LaAeZos36cV8hz2d1YrePtvtdgpfjtkYEhZgkrgEB33i07LHnPonAgwSLM9ew/exec';
+
+  function getNextApplicationNumber(){
+    return new Promise((resolve,reject)=>{
+      const callback='stsAppNumber_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const script=document.createElement('script');
+      const timer=setTimeout(()=>{cleanup();reject(new Error('Application Number পাওয়া যায়নি'));},15000);
+      function cleanup(){clearTimeout(timer);script.remove();try{delete window[callback];}catch(e){window[callback]=undefined;}}
+      window[callback]=data=>{cleanup();if(data&&data.success&&data.applicationNumber)resolve(data.applicationNumber);else reject(new Error('Application Number পাওয়া যায়নি'));};
+      script.onerror=()=>{cleanup();reject(new Error('Application Number service unavailable'));};
+      script.src=SCRIPT_URL+'?action=nextApplicationNumber&callback='+encodeURIComponent(callback);
+      document.body.appendChild(script);
+    });
+  }
+
   const f=document.getElementById('memberForm');
   if(f){
-    f.addEventListener('submit',e=>{
+    f.addEventListener('submit',async e=>{
       e.preventDefault();
       if(!f.checkValidity()){f.reportValidity();return;}
+
+      const btn=f.querySelector('button[type="submit"]');
+      const oldText=btn?btn.textContent:'';
+      if(btn){btn.disabled=true;btn.textContent='প্রস্তুত হচ্ছে...';}
+
       const d=Object.fromEntries(new FormData(f));
+      let appNumber='';
+
+      try{
+        if(btn) btn.textContent='Application No নেওয়া হচ্ছে...';
+        appNumber=await getNextApplicationNumber();
+      }catch(err){
+        console.error('Application Number error:',err);
+        if(btn){btn.disabled=false;btn.textContent=oldText;}
+        alert('Application Number পাওয়া যাচ্ছে না। Apps Script Web App-এর সর্বশেষ Deployment চালু আছে কি না পরীক্ষা করুন।');
+        return;
+      }
+
+      d.applicationNumber=appNumber;
+      const payload={memberType:d['সদস্য_ধরণ']||'',nameBangla:d['নাম_বাংলা']||'',nameEnglish:d['নাম_ইংরেজি']||'',fatherName:d['পিতা']||'',motherName:d['মাতা']||'',dateOfBirth:d['জন্ম_তারিখ']||'',gender:d['লিঙ্গ']||'',bloodGroup:d['রক্ত_গ্রুপ']||'',education:d['শিক্ষাগত_যোগ্যতা']||'',profession:d['পেশা']||'',religion:d['ধর্ম']||'',nid:d['এনআইডি']||'',phone:d['ফোন']||'',whatsapp:d['ওয়াটসঅ্যাপ']||'',email:d['ইমেইল']||'',para:d['পাড়া']||'',village:d['গ্রাম']||'',postOffice:d['পোস্ট']||'',thana:d['থানা']||'',upazila:d['উপজেলা']||'',district:d['জেলা']||'',country:d['দেশ']||'',applicationNumber:appNumber};
+
+      try{
+        if(btn) btn.textContent='তথ্য জমা হচ্ছে...';
+        await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams(payload).toString()});
+      }catch(err){
+        console.error('Submit error:',err);
+        if(btn){btn.disabled=false;btn.textContent=oldText;}
+        alert('Google Sheet-এ তথ্য জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+        return;
+      }
+
+      if(btn){btn.textContent='তথ্য জমা হয়েছে ✓';}
+      alert('সদস্য আবেদনটি Google Sheet-এ পাঠানো হয়েছে। Application No: '+appNumber+'\nএখন Member Reg. Form PDF/Print তৈরি হবে।');
       const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
       const labels={
         'সদস্য_ধরণ':'সদস্য ধরণ','নাম_বাংলা':'নাম (বাংলায়)','নাম_ইংরেজি':'নাম (ইংরেজিতে)',
@@ -143,9 +190,16 @@ document.addEventListener('DOMContentLoaded',()=>{
       };
       const rows=Object.entries(d).filter(([k])=>k!=='অঙ্গীকার').map(([k,v])=>
         `<div class="row"><span class="label">${esc(labels[k]||k)}</span><span class="value">${esc(v)}</span></div>`).join('');
-      const w=window.open('','_blank');
-      if(!w){alert('পপ-আপ ব্লক করা আছে। ব্রাউজারে পপ-আপ অনুমতি দিয়ে আবার চেষ্টা করুন।');return;}
-      w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Member Reg. Form</title>
+      const pdfBtn=document.createElement('button');
+      pdfBtn.type='button';
+      pdfBtn.className='btn';
+      pdfBtn.textContent='📄 PDF ডাউনলোড / প্রিন্ট করুন';
+      pdfBtn.style.marginTop='12px';
+      f.appendChild(pdfBtn);
+      pdfBtn.addEventListener('click',()=>{
+        const w=window.open('','_blank');
+        if(!w){alert('পপ-আপ ব্লক করা আছে। ব্রাউজারে পপ-আপ অনুমতি দিয়ে আবার চেষ্টা করুন।');return;}
+        w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Member Reg. Form</title>
       <style>
       @page{size:A4;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#eee;font-family:"Noto Serif Bengali","Nirmala UI","SolaimanLipi",serif;color:#111;line-height:1.45}
       .sheet{width:210mm;min-height:281mm;margin:10mm auto;background:#fff;border:2px solid #222;padding:8mm;position:relative}
@@ -165,7 +219,8 @@ document.addEventListener('DOMContentLoaded',()=>{
       <div class="sectiontitle">অঙ্গীকারনামা</div><div class="pledge"><span class="check">✓</span>আমি এই মর্মে স্বেচ্ছায় ও স্বজ্ঞানে স্বীকার করছি যে, আমার দেওয়া উপরোল্লিখিত তথ্যসমূহ সত্য ও নির্ভুল। আমি অঙ্গীকার করছি যে, আমি “সৃজনশীল তরুণ সংঘ”-এর গঠনতন্ত্র ও কার্যকরী কমিটির সকল সিদ্ধান্ত মেনে চলবো, সংগঠন ও গঠনতন্ত্র বহির্ভূত কোনো কাজ করবো না। গঠনতন্ত্র ও সংগঠন বিরোধী কোনো কাজে লিপ্ত থাকলে বা প্রমাণিত হলে কর্তৃপক্ষ আমার বিরুদ্ধে যে ব্যবস্থা গ্রহণ করবেন তা মেনে নিতে বাধ্য থাকবো, এতে আমার কোনো আপত্তি থাকবে না।</div>
       <div class="sign"><div><div class="line">আবেদনকারীর স্বাক্ষর</div></div><div><div class="line">সভাপতি / সাধারণ সম্পাদক</div></div></div></div>
       <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),700));<\/script></body></html>`);
-      w.document.close();
+        w.document.close();
+      });
     });
   }
 });

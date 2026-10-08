@@ -18,3 +18,10 @@
 - মোবাইল মেনু ২ কলামে এবং vertical scrolling সহ রাখা হয়েছে; menu scroll আটকায় এমন `touch-action:none` সরানো হয়েছে।
 - Hero-এর লোগো ও ছবি `index.html`-এ embedded করা হয়েছে, তাই `assets` path না পেলেও hero image ভাঙা দেখাবে না।
 - Hero: সবুজ ব্যাকগ্রাউন্ড, সাদা গোল লোগো ফ্রেম, তার নিচে আপনার দেওয়া ছবি—একই ক্রমে রাখা হয়েছে।
+
+
+## Member Registration সংযোগ
+- `member-form.html` এখন Google Apps Script Web App-এ সদস্য আবেদন POST করে।
+- Web App URL: `https://script.google.com/macros/s/AKfycbzTWo1I6LaAeZos36cV8hz2d1YrePtvtdgpfjtkYEhZgkrgEB33i07LHnPonAgwSLM9ew/exec`
+- Apps Script Sheet ID: `1uEdRCRK61ZWU7If9S-YSXMErZdBXpxQfnocQQtNR9PU`
+- ফর্মের বাংলা field name থেকে Apps Script-এর expected field key-তে mapping করা হয়েছে।
