@@ -1,9 +1,25 @@
-# সৃজনশীল তরুণ সংঘ — Website Package
+# সৃজনশীল তরুণ সংঘ — ওয়েবসাইট
 
-এই প্যাকেজে হোম পেজ, ২৪টি বিস্তারিত বিভাগের পেজ, সদস্য আবেদন ফরম, responsive CSS/JS এবং আপনার দেওয়া Member Reg. Form reference image রয়েছে।
+স্ট্যাটিক ওয়েবসাইট (GitHub Pages)। হোম পেইজ + ২৪টি মেনু-পেইজ + অনলাইন সদস্য আবেদন ফরম।
 
-Hero অংশে ৪ ব্যক্তির ছবির **ঠিক নিচে** `Charter of Srijonshil Declaration` রাখা হয়েছে।
+## ফোল্ডার
+| পথ | কাজ |
+|---|---|
+| `index.html`, `pages/*.html` | তৈরি করা পেইজ (এগুলো সরাসরি এডিট না করে `tools/` থেকে বিল্ড করুন) |
+| `tools/` | পেইজ জেনারেটর (`python3 tools/build.py`) ও লেখা (`pages_content.py`) |
+| `assets/` | CSS, JS (`apply.js` = ফরম, `pdf-form.js` = পিডিএফ), ছবি |
+| `data/geo.json` | বিভাগ→জেলা→উপজেলা/থানা ও দেশের তালিকা |
+| `apps-script/Code.gs` | গুগল শিট ও ড্রাইভে সংরক্ষণের ব্যাকএন্ড |
+| `config.js` | Apps Script ওয়েব অ্যাপের লিংক |
 
-Member Form submit করলে A4-friendly print page খুলবে; Browser Print → Save as PDF ব্যবহার করে `Member Reg. Form` PDF হিসেবে সংরক্ষণ করা যাবে।
+## লেখা বদলাতে
+`tools/pages_content.py` (মেনু-পেইজ) বা `tools/build.py` (হোম) এডিট করে `python3 tools/build.py` চালান, তারপর কমিট করুন।
 
-বাস্তব ডাটাবেস, admin panel, server-side PDF, সদস্য নম্বর auto-generation, payment ও form submission storage যোগ করতে backend প্রয়োজন হবে।
+## Apps Script সেটআপ (একবার)
+1. srijonshil2011@gmail.com অ্যাকাউন্টে script.google.com-এ প্রজেক্ট খুলে `apps-script/Code.gs` পেস্ট করুন।
+2. Deploy → New deployment → Web app → **Execute as: Me**, **Who has access: Anyone**।
+3. প্রথমবার অনুমতি (Sheets, Drive) দিন। লিংক `config.js`-এ বসান।
+4. কোড বদলালে Deploy → Manage deployments → Edit → **New version** (লিংক একই থাকে)।
+
+## GitHub Pages
+Settings → Pages → Source: `main` / root।
