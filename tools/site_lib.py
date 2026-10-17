@@ -22,7 +22,7 @@ SITE = {
 # ২৪টি মেনু: (slug, নাম)
 MENU = [
     ('need', 'সামাজিক সংগঠনের প্রয়োজনীয়তা'),
-    ('about', 'আমাদের সম্পর্কে'),
+    ('about', 'আমাদের পথচলা'),
     ('activities', 'আমাদের কার্যক্রম'),
     ('programs', 'কর্মসূচি'),
     ('structure', 'সাংগঠনিক কাঠামো'),
@@ -135,7 +135,8 @@ ICONS = {
 
 
 def more_link(link, label='বিস্তারিত'):
-    return '<a class="more" href="%s">%s %s</a>' % (link, esc(label), ICONS['arrow'])
+    cls = 'more more-btn' if label == 'বিস্তারিত' else 'more'
+    return '<a class="%s" href="%s">%s %s</a>' % (cls, link, esc(label), ICONS['arrow'])
 
 
 # ---------- পেইজ শেল ----------
@@ -168,6 +169,7 @@ def header(root, current=''):
         '<li><a href="%spages/%s.html"%s>%s</a></li>' % (
             root, s, ' aria-current="page"' if s == current else '', esc(t)) for s, t in MENU)
     home = root + 'index.html' if root else 'index.html'
+    links = '<li><a href="%s"%s>হোম</a></li>' % (home, ' aria-current="page"' if current == '' else '') + links
     return '''<body>
 <a class="skip" href="#main">মূল অংশে যান</a>
 <div class="topbar"><div class="wrap">%(slogan)s</div></div>
@@ -212,6 +214,7 @@ def footer(root):
     </ul>
   </div>
   <div class="copy"><div class="wrap">© %(name)s। সর্বস্বত্ব সংরক্ষিত।</div></div>
+  <div class="credit"><div class="wrap">Design and Developed By Juned Ahmed (JA080)</div></div>
 </footer>
 <script src="%(root)sassets/js/app.js" defer></script>
 %%(extra)s
