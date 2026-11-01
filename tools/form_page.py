@@ -41,7 +41,7 @@ def addr_block(prefix, title):
   </div>
   <div class="row-2 addr-loc" id="%(p)sLoc">
     <div class="field loc-upa"><label for="%(p)sUpa">উপজেলা/ সিটি কর্পোরেশন <span class="req">*</span></label><select id="%(p)sUpa" name="%(p)sUpa" required disabled><option value="">— আগে জেলা নির্বাচন করুন —</option></select></div>
-    <div class="field loc-union" id="%(p)sUnionWrap" hidden><label for="%(p)sUnion">ইউনিয়ন/পৌরসভা <span class="req">*</span></label><input id="%(p)sUnion" name="%(p)sUnion" type="text" maxlength="80"></div>
+    <div class="field loc-union" id="%(p)sUnionWrap" hidden><label for="%(p)sUnion">ইউনিয়ন <span class="req">*</span></label><div class="suffix-wrap"><input id="%(p)sUnion" name="%(p)sUnion" type="text" maxlength="80" placeholder="যেমন: ৬ নং টুকেরবাজার"><span class="suffix">ইউনিয়ন পরিষদ</span></div></div>
     <div class="field loc-ward" id="%(p)sWardWrap" hidden><label for="%(p)sWard">ওয়ার্ড <span class="req">*</span></label><select id="%(p)sWard" name="%(p)sWard"><option value="">— নির্বাচন করুন —</option></select><input id="%(p)sWardText" name="%(p)sWardText" type="text" maxlength="40" placeholder="ওয়ার্ড নম্বর লিখুন" hidden></div>
     <div class="field loc-thana"><label for="%(p)sThana">থানা <span class="req">*</span></label><select id="%(p)sThana" name="%(p)sThana" required disabled><option value="">— আগে জেলা নির্বাচন করুন —</option></select></div>
   </div>
@@ -76,6 +76,23 @@ def membership_body():
         + '<h3>সদস্যপদের আবেদন ফি</h3><div class="fees">%s</div>' % fee_cards
     )
 
+    permit = '''
+<section class="permit" id="permitBox" aria-labelledby="permitTitle">
+  <h2 id="permitTitle">অনুমতি নিন</h2>
+  <p class="small">আবেদন জমা দিতে সংগঠনের অনুমতি লাগে। নাম ও ফোন নম্বর দিয়ে অনুমতির অনুরোধ পাঠান। অনুমতির অপেক্ষায় না থেকে নিচের ফরমটি এখনই পূরণ করে রাখতে পারেন; অনুমতি পেলে "জমা দিন" বাটন চালু হবে।</p>
+  <div class="field sug-wrap"><label for="permitName">১। নাম (বাংলায়) এনআইডি অনুযায়ী: <span class="req">*</span> <small class="inl">(নাম বাংলা ভাষা ব্যতীত অন্য কোন ভাষা ব্যবহার করা যাবে না)</small></label><input id="permitName" type="text" maxlength="100" autocomplete="off" lang="bn"><div class="sug" id="permitSug" role="listbox" hidden></div><small class="hint-warn" id="permitNameHint" hidden>বাংলায় লিখুন</small></div>
+  <div class="row-2">
+    <div class="field"><label for="permitFather">২। পিতার নাম: <span class="req">*</span></label><input id="permitFather" type="text" maxlength="100" autocomplete="off" lang="bn"><small class="hint-warn" id="permitFatherHint" hidden>বাংলায় লিখুন</small></div>
+    <div class="field"><label for="permitPhone">৩। ফোন নম্বর: <span class="req">*</span></label><input id="permitPhone" type="tel" inputmode="tel" maxlength="20" autocomplete="tel"><small>বাংলা বা ইংরেজি, যেকোনো ভাষায় লিখতে পারবেন</small></div>
+  </div>
+  <div class="field cap-row"><label for="capAns">নিরাপত্তা প্রশ্ন: <strong id="capQ">…</strong> = ? <span class="req">*</span></label>
+    <div class="cap-line"><input id="capAns" type="text" inputmode="numeric" maxlength="4" autocomplete="off"><button type="button" class="linklike" id="capRefresh">নতুন প্রশ্ন</button></div></div>
+  <input type="text" id="permitWebsite" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+  <div class="permit-act"><button type="button" class="btn btn-round" id="permitBtn">অনুমতির জন্য পাঠান</button></div>
+  <div id="permitStatus" class="status" role="status" aria-live="polite"></div>
+</section>
+'''
+
     form = '''
 <form id="applyForm" class="form-card apply" novalidate autocomplete="on">
   <div class="form-head">
@@ -106,20 +123,20 @@ def membership_body():
         <option value="junior">(গ) জুনিয়র সদস্য</option>
         <option value="donor">(ঘ) দাতা সদস্য</option>
       </select></div>
-    <div class="field"><label for="reference">রেফারেন্স <span class="req">*</span></label>
+    <div class="field"><label for="reference">সূত্র/সুপারিশ <span class="req">*</span></label>
       <select id="reference" name="reference" required>
-        <option value="none">কোন রেফারেন্স নেই</option>
+        <option value="none">কোন সূত্র/সুপারিশ নেই</option>
         <option value="junior">জুনিয়র সদস্য ছিলাম</option>
         <option value="general">সাধারণ সদস্য ছিলাম</option>
         <option value="expat">প্রবাসী সদস্য ছিলাম</option>
         <option value="donor">দাতা সদস্য ছিলাম</option>
       </select></div>
-    <div class="field" id="refProofWrap" hidden><label for="refProof">রেফারেন্স প্রমাণক <span class="req">*</span></label><input id="refProof" name="refProof" type="text" maxlength="120" placeholder="যেমন: আগের সদস্য নম্বর বা সদস্যের নাম"><small>আপনার আগের সদস্যপদের প্রমাণ নিজ হাতে লিখুন</small></div>
-    <div class="field"><label for="fee">২। নিবন্ধন ফি</label><input id="fee" type="text" readonly placeholder="সদস্য ধরণ নির্বাচন করুন"><small id="feeNote" hidden>রেফারেন্সের জন্য ২০%% ছাড় প্রযোজ্য</small></div>
+    <div class="field" id="refProofWrap" hidden><label for="refProof">সূত্র/সুপারিশ প্রমাণক <span class="req">*</span></label><select id="refProofSel"><option value="">— তালিকা থেকে বাছাই করুন —</option></select><input id="refProof" name="refProof" type="text" maxlength="120" placeholder="সদস্যের নাম ও সদস্য নম্বর লিখুন" hidden><small>"সদস্য তালিকা" থেকে আপনার আগের সদস্যপদ বাছাই করুন; তালিকায় না থাকলে "অন্য" বেছে নিজ হাতে লিখুন</small></div>
+    <div class="field"><label for="fee">২। নিবন্ধন ফি</label><input id="fee" type="text" readonly placeholder="সদস্য ধরণ নির্বাচন করুন"><small id="feeNote" hidden>সূত্র/সুপারিশের জন্য ২০%% ছাড় প্রযোজ্য</small></div>
   </div>
 
-  <div class="field"><label for="nameBn">৩। নাম (বাংলায়) এনআইডি অনুযায়ী <span class="req">*</span></label><input id="nameBn" name="nameBn" type="text" maxlength="100" required autocomplete="name"></div>
-  <div class="field"><label for="nameEn">৪। নাম (ইংরেজিতে) এনআইডি অনুযায়ী <span class="req">*</span></label><input id="nameEn" name="nameEn" type="text" maxlength="100" required style="text-transform:uppercase"></div>
+  <div class="field"><label for="nameBn">৩। নাম (বাংলায়) এনআইডি অনুযায়ী <span class="req">*</span></label><input id="nameBn" name="nameBn" type="text" maxlength="100" required autocomplete="off" lang="bn"><small class="hint-warn" id="nameBnHint" hidden>শুধু বাংলা অক্ষর লিখুন।</small></div>
+  <div class="field"><label for="nameEn">৪। নাম (ইংরেজিতে) এনআইডি অনুযায়ী <span class="req">*</span></label><input id="nameEn" name="nameEn" type="text" maxlength="100" required style="text-transform:uppercase" lang="en"><small class="hint-warn" id="nameEnHint" hidden>শুধু ইংরেজি অক্ষর লিখুন।</small></div>
   <div class="row-2">
     <div class="field"><label for="father">৫। পিতার নাম <span class="req">*</span></label><input id="father" name="father" type="text" maxlength="100" required></div>
     <div class="field"><label for="mother">৬। মাতার নাম <span class="req">*</span></label><input id="mother" name="mother" type="text" maxlength="100" required></div>
@@ -146,21 +163,36 @@ def membership_body():
   <div class="row-3">
     <div class="field"><label for="phone">১৪। ফোন নম্বর</label><input id="phone" name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="tel"></div>
     <div class="field"><label for="whatsapp">১৫। ওয়াটসঅ্যাপ নম্বর</label><input id="whatsapp" name="whatsapp" type="tel" inputmode="tel" maxlength="20"></div>
-    <div class="field"><label for="email">১৬। ইমেইল ঠিকানা</label><input id="email" name="email" type="email" maxlength="120" autocomplete="email"></div>
+    <div class="field"><label for="email">১৬। ইমেইল ঠিকানা</label><input id="email" name="email" type="email" maxlength="120" autocomplete="email" inputmode="email"><small>ইমেইল শুধু ইংরেজি ভাষায় লিখুন</small><small class="hint-warn" id="emailHint" hidden>ইংরেজিতে লিখুন</small></div>
   </div>
 
   <h3 class="addr-title">১৭। স্থায়ী ঠিকানা</h3>
   %(perm)s
 
   <h3 class="addr-title">১৮। বর্তমান ঠিকানা</h3>
-  <div class="radio-row" role="radiogroup" aria-label="বর্তমান ঠিকানা">
+  <div id="curForeign" hidden>
+    <p class="small muted">প্রবাসী সদস্য — বর্তমান বসবাসের দেশ বাছাই করুন। দেশ অনুযায়ী নিচের ঘরগুলোর নাম বদলে যাবে; যেগুলো আপনার দেশে প্রযোজ্য নয় সেগুলো ফাঁকা রাখতে পারেন।</p>
+    <div class="row-2">
+      <div class="field"><label for="cfCountry">বর্তমান বসবাসের দেশ <span class="req">*</span></label><select id="cfCountry"><option value="">— নির্বাচন করুন —</option></select></div>
+      <div class="field" id="cfL1w" hidden><label for="cfL1" id="cfL1l">রাজ্য/প্রদেশ <small>(ঐচ্ছিক)</small></label><input id="cfL1" type="text" maxlength="80"></div>
+    </div>
+    <div class="row-2">
+      <div class="field" id="cfL2w" hidden><label for="cfL2" id="cfL2l">জেলা/কাউন্টি <small>(ঐচ্ছিক)</small></label><input id="cfL2" type="text" maxlength="80"></div>
+      <div class="field" id="cfL3w" hidden><label for="cfL3" id="cfL3l">শহর/নগর <small>(ঐচ্ছিক)</small></label><input id="cfL3" type="text" maxlength="80"></div>
+    </div>
+    <div class="row-2">
+      <div class="field" id="cfLinew" hidden><label for="cfLine">এলাকা/রাস্তা/বাসার ঠিকানা <small>(ঐচ্ছিক)</small></label><input id="cfLine" type="text" maxlength="120"></div>
+      <div class="field" id="cfPostw" hidden><label for="cfPost">ডাকঘর/পোস্টকোড/জিপ <small>(ঐচ্ছিক)</small></label><input id="cfPost" type="text" maxlength="30"></div>
+    </div>
+  </div>
+  <div class="radio-row" id="curRadios" role="radiogroup" aria-label="বর্তমান ঠিকানা">
     <label class="radio"><input type="radio" name="addrSame" value="same" checked> স্থায়ী ও বর্তমান ঠিকানা একই</label>
     <label class="radio"><input type="radio" name="addrSame" value="diff"> বর্তমান ঠিকানা ভিন্ন</label>
   </div>
   <div id="curWrap" hidden>%(cur)s</div>
 
-  <div class="row-2">
-    <div class="field"><label for="countryType">১৯। দেশের নাম <span class="req">*</span></label><select id="countryType" name="countryType" required><option value="">— নির্বাচন করুন —</option><option value="bd">বাংলাদেশ</option><option value="abroad">প্রবাসী</option></select></div>
+  <div class="row-2" id="countryRow">
+    <div class="field"><label for="countryType">১৯। বর্তমান বসবাসরত দেশের নাম <span class="req">*</span></label><select id="countryType" name="countryType" required><option value="">— নির্বাচন করুন —</option><option value="bd">বাংলাদেশ</option><option value="abroad">প্রবাসী</option></select></div>
     <div class="field" id="countryWrap" hidden><label for="country">প্রবাসের দেশ <span class="req">*</span></label><select id="country" name="country"><option value="">— নির্বাচন করুন —</option></select></div>
   </div>
 
@@ -176,7 +208,8 @@ def membership_body():
 
   <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
   <div id="applyStatus" class="status" role="status" aria-live="polite"></div>
-  <button class="btn btn-primary btn-lg" type="submit" id="applySubmit">জমা দিন</button>
+  <button class="btn btn-primary btn-lg" type="submit" id="applySubmit" disabled>জমা দিন</button>
+  <p class="small muted" id="submitHint">অনুমতি পাওয়ার পর “জমা দিন” বাটন চালু হবে।</p>
   <p class="small muted">জমা দিলে আপনার আবেদনের একটি পিডিএফ কপি তৈরি হয়ে আপনার ডিভাইসে ডাউনলোড হবে এবং সংগঠনের কাছে সংরক্ষিত হবে।</p>
 </form>
 
@@ -196,9 +229,11 @@ def membership_body():
         'perm': addr_block('perm', 'স্থায়ী ঠিকানা'),
         'cur': addr_block('cur', 'বর্তমান ঠিকানা'),
     }
-    return intro + '<div id="formArea">' + form + '</div>'
+    return intro + '<div id="formArea">' + permit + form + '</div>'
 
 
 FORM_SCRIPTS = '''<script src="../config.js"></script>
+<script src="../assets/js/members.js"></script>
+<script src="../assets/js/flags.js"></script>
 <script src="../assets/js/pdf-form.js" defer></script>
 <script src="../assets/js/apply.js" defer></script>'''

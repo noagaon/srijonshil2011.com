@@ -88,7 +88,8 @@ def home_body():
                  + '<p>' + more_link(href('past-presidents', 'list'), 'প্রাক্তন সভাপতি তালিকা') + '</p>',
                  href('past-presidents'), id_='past-presidents'))
     S.append(sec('সহযোগিতা করুন',
-                 '<div class="chips">' + ''.join('<span class="chip">%s</span>' % esc(x) for x in ['স্বেচ্ছাসেবক হিসেবে', 'আর্থিক সহযোগিতা', 'শিক্ষা সহায়তা', 'মানবিক সহায়তা']) + '</div>',
+                 '<div class="chips">' + ''.join('<span class="chip">%s</span>' % esc(x) for x in ['স্বেচ্ছাসেবক হিসেবে', 'শিক্ষা সহায়তা', 'মানবিক সহায়তা']) + '</div>'
+                 + '<p class="btn-row">' + btn('আর্থিক সহযোগিতা', href('support', 'financial'), 'primary') + '</p>',
                  href('support'), id_='support'))
     S.append(sec('প্রতিবেদন',
                  '<div class="chips">' + ''.join('<span class="chip">%s</span>' % esc(x) for x in ['বার্ষিক প্রতিবেদন', 'কার্যক্রম প্রতিবেদন', 'আর্থিক প্রতিবেদন', 'প্রকল্প প্রতিবেদন']) + '</div>',
@@ -167,9 +168,15 @@ def build_pages():
         else:
             body = pc.BODY[slug]
         write('pages/%s.html' % slug, page(slug, body, extra))
+    import receipt_page
+    write('pages/subscription-receipt.html', page('support', receipt_page.body(), '<script src="../config.js"></script><script src="../assets/js/receipt.js" defer></script>', title='চাঁদা জমাদানের রসিদ', parent='support'))
 
 
 if __name__ == '__main__':
     build_home()
     build_pages()
+    import json as _j
+    write('assets/js/members.js', 'window.SRIJON_MEMBERS=' + _j.dumps(
+        {k: [{'n': n, 'no': no} for (n, no, d) in v] for k, v in pc.MEMBERS.items()},
+        ensure_ascii=False, separators=(',', ':')) + ';\n')
     print('OK: index.html +', len(MENU), 'pages')

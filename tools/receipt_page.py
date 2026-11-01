@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+"""সাংগঠনিক চাঁদা: "চাঁদা আদায় রসিদ" — প্রদত্ত নমুনা ডিজাইন অনুযায়ী (প্রতি কপি ৮ × ৩.৬ ইঞ্চি, দুই কপি: সদস্য কপি ও অফিস কপি)।"""
+from site_lib import *
+
+TYPES = ['সাধারণ সদস্য', 'প্রবাসী সদস্য', 'জুনিয়র সদস্য', 'দাতা সদস্য']
+METHODS = ['নগদ', 'বিকাশ', 'নগদ (মোবাইল ব্যাংকিং)', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য']
+KINDS = ['মাসিক চাঁদা', 'বার্ষিক চাঁদা', 'এককালীন চাঁদা', 'অন্যান্য']
+
+
+def mir(i):
+    return '<span class="v mir" data-for="%s"></span>' % i
+
+
+def box(i):
+    return '<span class="rc-box mir" data-for="%s"></span>' % i
+
+
+def copy(label):
+    return '''<div class="rc-wrap"><section class="rcpt" aria-label="%(l)s">
+  <div class="rc-head">
+    <div class="rc-bism">বিসমিল্লাহির রাহমানির রাহীম</div>
+    <img class="rc-logo" src="../assets/img/logo.webp" alt="">
+    <div class="rc-title"><b>সৃজনশীল তরুণ সংঘ</b><i>SRIJONSHIL TARUN SANGHA</i></div>
+    <div class="rc-addr">নোয়াগাঁও, টুকেরবাজার, ৩৯ নং ওয়ার্ড, সিলেট সিটি কর্পোরেশন, সিলেট। &nbsp;ইমেইল– srijonshil2011@gmail.com</div>
+    <div class="rc-slogan"><span>সামাজিক উন্নয়ন ও ন্যায়বিচার, তারুণ্যের অঙ্গীকার</span></div>
+    <div class="rc-tag">%(l)s</div>
+  </div>
+  <div class="rc-pill">চাঁদা আদায় রসিদ</div>
+  <div class="rc-boxes">
+    <div><label>রসিদ নম্বর:</label>%(no)s</div><div><label>তারিখ:</label>%(dt)s</div>
+    <div><label>সদস্য ধরণ:</label>%(ty)s</div><div><label>সদস্য নম্বর:</label>%(mn)s</div>
+  </div>
+  <div class="rc-rows">
+    <div class="rc-r"><div class="rc-f"><label>১। প্রদানকারীর নাম:</label>%(nm)s</div><div class="rc-f"><label>২। চাঁদার ধরণ:</label>%(kd)s</div></div>
+    <div class="rc-r"><div class="rc-f"><label>৩। চাঁদার পরিমাণ (অঙ্কে):</label>%(am)s</div><div class="rc-f"><label>৪। চাঁদার পরিমাণ (কথায়):</label>%(wd)s</div></div>
+    <div class="rc-r"><div class="rc-f"><label>৫। চাঁদা প্রদানের মাধ্যম:</label>%(me)s</div></div>
+  </div>
+  <div class="rc-sign"><div>প্রদানকারীর স্বাক্ষর</div><div>আদায়কারীর স্বাক্ষর</div></div>
+</section></div>''' % {'l': esc(label), 'no': box('rNo'), 'dt': box('rDate'), 'ty': box('rType'), 'mn': box('rMemNo'),
+                      'nm': mir('rName'), 'kd': mir('rKind'), 'am': mir('rAmount'), 'wd': mir('rWords'), 'me': mir('rMethod')}
+
+
+def sel(i, label, opts, blank=True):
+    o = ('<option value="">— নির্বাচন করুন —</option>' if blank else '') + ''.join('<option>%s</option>' % esc(x) for x in opts)
+    return '<div class="field"><label for="%s">%s</label><select id="%s">%s</select></div>' % (i, esc(label), i, o)
+
+
+def inp(i, label, typ='text', ph='', cls=''):
+    return '<div class="field %s"><label for="%s">%s</label><input id="%s" type="%s" autocomplete="off"%s></div>' % (
+        cls, i, esc(label), i, typ, (' placeholder="%s"' % esc(ph)) if ph else '')
+
+
+def body():
+    form = ('<div class="form-card rc-form no-print"><div class="grid-form">'
+            + inp('rNo', 'রসিদ নম্বর (ফাঁকা রাখলে নিজে বসবে)') + inp('rDate', 'তারিখ', 'date')
+            + sel('rType', 'সদস্য ধরণ', TYPES) + inp('rMemNo', 'সদস্য নম্বর', 'text', 'যেমন: STS/GM/0001')
+            + inp('rName', '১। প্রদানকারীর নাম', cls='span2') + sel('rKind', '২। চাঁদার ধরণ', KINDS)
+            + inp('rAmount', '৩। চাঁদার পরিমাণ (অঙ্কে)', 'text', 'যেমন: 300') + inp('rWords', '৪। চাঁদার পরিমাণ (কথায়)', 'text', 'যেমন: তিনশত টাকা মাত্র')
+            + sel('rMethod', '৫। চাঁদা প্রদানের মাধ্যম', METHODS)
+            + '</div><div class="rcpt-tools"><button type="button" class="btn btn-primary" id="rSave">💾 সংরক্ষণ করুন</button><button type="button" class="btn btn-outline" id="rPrint">🖨️ প্রিন্ট করুন / পিডিএফ</button>'
+              '<button type="button" class="btn btn-outline" id="rClear">নতুন রসিদ (সব মুছুন)</button></div>'
+            '<input type="text" id="rWebsite" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">'
+            '<div id="rStatus" class="status" role="status" aria-live="polite"></div></div>')
+    return (
+        '<p class="lead no-print">সাংগঠনিক চাঁদা জমা নেওয়ার পর সদস্যকে এই রসিদ দেওয়া হয়। নিচের ঘরগুলো পূরণ করলে নিচের রসিদে (সদস্য কপি ও অফিস কপি) একই তথ্য আসবে। তারপর "সংরক্ষণ করুন" চাপলে তথ্য সংগঠনের শিটে জমা হবে ও রসিদ নম্বর বসবে; তারপর "প্রিন্ট করুন" চাপুন; পিডিএফ করতে প্রিন্ট জানালায় "Save as PDF" বেছে নিন।</p>'
+        + form
+        + '<div class="rcpt-sheet" id="rSheet">' + copy('সদস্য কপি') + '<div class="rc-cut" aria-hidden="true"><span>✂ কেটে আলাদা করুন</span></div>' + copy('অফিস কপি') + '</div>'
+    )

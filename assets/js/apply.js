@@ -8,7 +8,7 @@
   var CFG = window.SRIJON_CONFIG || {};
   var FEE_NUM = { general: 1000, expat: 1200, junior: 100, donor: 2000 };
   var REF_DISCOUNT = 0.2;                                    // রেফারেন্স থাকলে ২০% ছাড়
-  var REF_LABEL = { none: 'কোন রেফারেন্স নেই', junior: 'জুনিয়র সদস্য ছিলাম', general: 'সাধারণ সদস্য ছিলাম', expat: 'প্রবাসী সদস্য ছিলাম', donor: 'দাতা সদস্য ছিলাম' };
+  var REF_LABEL = { none: 'কোন সূত্র/সুপারিশ নেই', junior: 'জুনিয়র সদস্য ছিলাম', general: 'সাধারণ সদস্য ছিলাম', expat: 'প্রবাসী সদস্য ছিলাম', donor: 'দাতা সদস্য ছিলাম' };
   function feeAmount(t, ref) {
     if (!FEE_NUM[t]) return 0;
     return Math.round(FEE_NUM[t] * (ref && ref !== 'none' ? 1 - REF_DISCOUNT : 1));
@@ -121,6 +121,7 @@
       wireAddress('perm');
       wireAddress('cur');
       fillSelect($('country'), g.countries.filter(function (c) { return c !== 'বাংলাদেশ'; }), '— নির্বাচন করুন —');
+      fillSelect($('cfCountry'), g.countries.filter(function (c) { return c !== 'বাংলাদেশ'; }), '— নির্বাচন করুন —');
       ['perm', 'cur'].forEach(function (p) { wireOther(p + 'PO'); wireOther(p + 'Village'); wireOther(p + 'Para'); });
     });
   }
@@ -148,12 +149,99 @@
     $('fee').value = feeText(t, r);
     $('feeNote').hidden = !(t && r && r !== 'none');
   }
-  $('memberType').addEventListener('change', function () { syncReference(); syncFee(); syncNidRules(); });
+  $('memberType').addEventListener('change', function () { syncReference(); syncFee(); syncNidRules(); syncExpat(); });
+
+  // ---------- প্রবাসী সদস্য: দেশভিত্তিক বর্তমান ঠিকানা ----------
+  var DEF_LV = ['রাজ্য/প্রদেশ/অঞ্চল (State/Province/Region)', 'জেলা/কাউন্টি (District/County)', 'শহর/নগর (City/Town)'];
+  var GULF = ['প্রদেশ/গভর্নরেট (Governorate/Region)', 'এলাকা/জেলা (Area/District)', 'শহর (City)'];
+  var LV = {
+    us: ['রাজ্য (State)', 'কাউন্টি (County)', 'শহর (City)'],
+    gb: ['দেশ/অঞ্চল (Country/Region)', 'কাউন্টি (County)', 'শহর (City/Town)'],
+    ca: ['প্রদেশ/টেরিটরি (Province/Territory)', 'অঞ্চল/কাউন্টি (Region/County)', 'শহর (City)'],
+    au: ['রাজ্য/টেরিটরি (State/Territory)', 'অঞ্চল (Region/LGA)', 'শহর/শহরতলি (City/Suburb)'],
+    nz: ['অঞ্চল (Region)', 'জেলা (District)', 'শহর (City)'],
+    it: ['অঞ্চল (Regione/Region)', 'প্রদেশ (Provincia)', 'কমুনে/শহর (Comune/City)'],
+    de: ['অঙ্গরাজ্য (Bundesland/State)', 'জেলা (Landkreis/District)', 'শহর (Stadt/City)'],
+    fr: ['অঞ্চল (Région/Region)', 'বিভাগ (Département)', 'কমিউন/শহর (Commune/City)'],
+    es: ['স্বায়ত্তশাসিত অঞ্চল (Comunidad/Region)', 'প্রদেশ (Provincia)', 'শহর (Ciudad/City)'],
+    pt: ['জেলা (Distrito/District)', 'পৌরসভা (Concelho/Municipality)', 'শহর (Cidade/City)'],
+    nl: ['প্রদেশ (Provincie/Province)', 'পৌরসভা (Gemeente/Municipality)', 'শহর (Stad/City)'],
+    be: ['অঞ্চল (Region)', 'প্রদেশ (Province)', 'শহর (City)'],
+    se: ['কাউন্টি (Län/County)', 'পৌরসভা (Kommun)', 'শহর (City)'],
+    no: ['কাউন্টি (Fylke/County)', 'পৌরসভা (Kommune)', 'শহর (City)'],
+    dk: ['অঞ্চল (Region)', 'পৌরসভা (Kommune)', 'শহর (City)'],
+    fi: ['অঞ্চল (Region)', 'পৌরসভা (Kunta)', 'শহর (City)'],
+    gr: ['অঞ্চল (Region)', 'নোমোস/জেলা (Prefecture)', 'শহর (City)'],
+    ru: ['অঞ্চল/প্রজাতন্ত্র (Oblast/Republic)', 'জেলা (District)', 'শহর (City)'],
+    tr: ['প্রদেশ (İl/Province)', 'জেলা (İlçe/District)', 'শহর/মহল্লা (City/Neighbourhood)'],
+    sa: ['অঞ্চল (Region)', 'গভর্নরেট/জেলা (Governorate/District)', 'শহর (City)'],
+    ae: ['আমিরাত (Emirate)', 'এলাকা (Area)', 'শহর (City)'],
+    qa: GULF, kw: ['গভর্নরেট (Governorate)', 'এলাকা (Area)', 'শহর (City)'], om: GULF, bh: GULF, jo: GULF, lb: GULF, iq: GULF, ir: GULF,
+    my: ['রাজ্য (State)', 'জেলা (District)', 'শহর (City)'],
+    sg: ['অঞ্চল (Region)', 'এলাকা (District)', 'শহর (City)'],
+    jp: ['প্রিফেকচার (Prefecture)', 'শহর/ওয়ার্ড (City/Ward)', 'এলাকা (Town)'],
+    kr: ['প্রদেশ/মহানগর (Province/Metropolitan)', 'জেলা (Gu/District)', 'শহর (City)'],
+    cn: ['প্রদেশ (Province)', 'শহর (City)', 'জেলা (District)'],
+    'in': ['রাজ্য (State)', 'জেলা (District)', 'শহর/গ্রাম (City/Village)'],
+    pk: ['প্রদেশ (Province)', 'জেলা (District)', 'শহর (City)'],
+    lk: ['প্রদেশ (Province)', 'জেলা (District)', 'শহর (City)'],
+    np: ['প্রদেশ (Province)', 'জেলা (District)', 'শহর (City)'],
+    id: ['প্রদেশ (Province)', 'রিজেন্সি/সিটি (Regency/City)', 'জেলা (Kecamatan)'],
+    th: ['প্রদেশ (Province)', 'জেলা (District)', 'উপজেলা/শহর (Subdistrict/City)'],
+    za: ['প্রদেশ (Province)', 'জেলা (District)', 'শহর (City)'],
+    ng: ['রাজ্য (State)', 'লোকাল সরকার এলাকা (LGA)', 'শহর (City)'],
+    br: ['রাজ্য (Estado/State)', 'পৌরসভা (Município)', 'শহর (Cidade)'],
+    mx: ['রাজ্য (Estado/State)', 'পৌরসভা (Municipio)', 'শহর (City)'],
+    ar: ['প্রদেশ (Provincia)', 'বিভাগ (Departamento)', 'শহর (City)']
+  };
+  function isExpat() { return val('memberType') === 'expat'; }
+  function cfLevels() {
+    var code = (window.SRIJON_FLAGS || {})[val('cfCountry')];
+    return LV[code] || DEF_LV;
+  }
+  function shortLbl(s) { return String(s).split(' (')[0]; }
+  function syncCfLabels() {
+    var has = !!val('cfCountry'), lv = cfLevels();
+    ['cfL1w', 'cfL2w', 'cfL3w', 'cfLinew', 'cfPostw'].forEach(function (id) { $(id).hidden = !has; });
+    [1, 2, 3].forEach(function (i) { $('cfL' + i + 'l').innerHTML = lv[i - 1] + ' <small>(ঐচ্ছিক)</small>'; });
+    // ১৯ নং ঘরের সাথে মিল রাখা
+    $('countryType').value = has ? 'abroad' : ''; $('countryWrap').hidden = !has; $('country').value = val('cfCountry');
+  }
+  $('cfCountry').addEventListener('change', syncCfLabels);
+  function syncExpat() {
+    var ex = isExpat();
+    $('curForeign').hidden = !ex; $('curRadios').hidden = ex; $('countryRow').hidden = ex;
+    if (ex) { $('curWrap').hidden = true; syncCfLabels(); }
+    else { $('curWrap').hidden = form.addrSame.value !== 'diff'; $('countryType').value = ''; $('countryWrap').hidden = true; $('country').value = ''; }
+  }
+  function foreignAddr() {
+    var lv = cfLevels();
+    return { foreign: true, country: val('cfCountry'), line: val('cfLine'), post: val('cfPost'),
+      l1: shortLbl(lv[0]), v1: val('cfL1'), l2: shortLbl(lv[1]), v2: val('cfL2'), l3: shortLbl(lv[2]), v3: val('cfL3') };
+  }
+  function foreignText(a) {
+    return [a.line, a.v3 && a.l3 + ': ' + a.v3, a.v2 && a.l2 + ': ' + a.v2, a.v1 && a.l1 + ': ' + a.v1, a.post && 'পোস্টকোড: ' + a.post, a.country].filter(Boolean).join(', ');
+  }
   $('reference').addEventListener('change', function () {
     syncFee();
     var on = val('reference') !== 'none';
     $('refProofWrap').hidden = !on;
-    if (!on) $('refProof').value = ''; else $('refProof').focus();
+    $('refProof').value = ''; $('refProof').hidden = true;
+    if (on) fillProofList(val('reference'));
+  });
+  function fillProofList(type) {
+    var sel = $('refProofSel'), list = (window.SRIJON_MEMBERS || {})[type] || [];
+    sel.innerHTML = '';
+    var o = document.createElement('option'); o.value = ''; o.textContent = '— তালিকা থেকে বাছাই করুন —'; sel.appendChild(o);
+    list.forEach(function (m) {
+      var op = document.createElement('option'); op.value = m.no; op.textContent = m.n + ' — ' + m.no; sel.appendChild(op);
+    });
+    var ot = document.createElement('option'); ot.value = '__other'; ot.textContent = 'অন্য (নিজে লিখব)'; sel.appendChild(ot);
+  }
+  $('refProofSel').addEventListener('change', function () {
+    var v = this.value, inp = $('refProof');
+    if (v === '__other') { inp.hidden = false; inp.value = ''; inp.focus(); }
+    else { inp.hidden = true; inp.value = v; }
   });
   wireOther('religion');
   syncNidRules();
@@ -214,6 +302,173 @@
     img.src = url;
   });
 
+  // ---------- অনুমতি-ব্যবস্থা ----------
+  var KEY = 'srijon_access_rid';
+  var accessId = '', approved = false, pollTimer = null, capId = '';
+  function store(v) { try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch (e) {} }
+  function stored() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function pStatus(cls, msg) { var s = $('permitStatus'); s.className = 'status' + (cls ? ' ' + cls : ''); s.textContent = msg || ''; }
+
+  // ---------- ভাষার বিধিনিষেধ ----------
+  function restrict(id, hintId, re) {
+    var el = $(id), hint = hintId ? $(hintId) : null;
+    if (!el) return;
+    el.addEventListener('input', function () {
+      var cleaned = el.value.replace(re, '');
+      if (hint) hint.hidden = cleaned === el.value;
+      if (cleaned !== el.value) el.value = cleaned;
+    });
+  }
+  restrict('permitName', 'permitNameHint', /[^\u0980-\u09FF\u200c\u200d\s.\-]/g);
+  restrict('nameBn', 'nameBnHint', /[^\u0980-\u09FF\u200c\u200d\s.\-]/g);
+  restrict('nameEn', 'nameEnHint', /[^A-Za-z\s.\-']/g);
+  restrict('permitFather', 'permitFatherHint', /[^\u0980-\u09FF\u200c\u200d\s.\-]/g);
+  restrict('father', '', /[^\u0980-\u09FF\u200c\u200d\s.\-]/g);
+  restrict('email', 'emailHint', /[^\x21-\x7E]/g);
+  // সংখ্যার ঘর: বাংলা বা ইংরেজি যেকোনো ভাষায় লেখা যায়, কোডে ইংরেজি অঙ্কে বদলে যায়
+  ['permitPhone', 'phone', 'whatsapp', 'nid', 'birthReg'].forEach(function (id) {
+    var el = $(id); if (!el) return;
+    el.addEventListener('input', function () { var c = en(el.value); if (c !== el.value) el.value = c; });
+  });
+
+  // ---------- নামের সাজেশন (ডাটাবেইজ থেকে; শুধু নাম আসে) ----------
+  var dbPick = null, sugTimer = null, sugSeq = 0, sugBox = $('permitSug'), pName = $('permitName');
+  function hideSug() { sugBox.hidden = true; sugBox.innerHTML = ''; }
+  pName.addEventListener('input', function () {
+    if (dbPick && dbPick.n !== pName.value) dbPick = null;
+    clearTimeout(sugTimer);
+    var q = pName.value.trim();
+    if (!q) { hideSug(); return; }
+    sugTimer = setTimeout(function () {
+      var my = ++sugSeq;
+      post({ action: 'suggest', q: q }).then(function (r) {
+        if (my !== sugSeq || !r || !r.ok || !r.items || !r.items.length) { if (my === sugSeq) hideSug(); return; }
+        sugBox.innerHTML = '';
+        r.items.forEach(function (it) {
+          var b = document.createElement('button'); b.type = 'button'; b.textContent = it.n;
+          b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+          b.addEventListener('click', function () {
+            pName.value = it.n; dbPick = it; hideSug();
+            post({ action: 'pick', k: it.k }).then(function (pr) { if (pr && pr.ok && dbPick === it) { if (pr.father) $('permitFather').value = pr.father; } }).catch(function () {});
+            $('permitFather').focus();
+          });
+          sugBox.appendChild(b);
+        });
+        sugBox.hidden = false;
+      }).catch(function () { if (my === sugSeq) hideSug(); });
+    }, 220);
+  });
+  pName.addEventListener('blur', function () { setTimeout(hideSug, 150); });
+
+  // ---------- অনুমতির তথ্য মূল ফরমে বসানো; ব্যবহারকারী কেবল "তথ্য বসানো হয়েছে" দেখে ----------
+  function maskField(id, canUnlock) {
+    var el = $(id); if (!el || el.parentNode.classList.contains('mask-box')) return;
+    var box = document.createElement('div'); box.className = 'mask-box';
+    el.parentNode.insertBefore(box, el); box.appendChild(el);
+    el.classList.add('is-masked'); el.readOnly = true; el.tabIndex = -1;
+    if (el.tagName === 'SELECT' || el.type === 'date') el.disabled = true;
+    var note = document.createElement('div'); note.className = 'mask-note';
+    note.innerHTML = '<span>✔ তথ্য বসানো হয়েছে</span>';
+    if (canUnlock) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = 'নিজে লিখব';
+      b.addEventListener('click', function () { unmaskField(id, true); });
+      note.appendChild(b);
+    }
+    box.appendChild(note);
+  }
+  function unmaskField(id, clear) {
+    var el = $(id), box = el && el.parentNode;
+    if (!box || !box.classList.contains('mask-box')) return;
+    box.parentNode.insertBefore(el, box); box.remove();
+    el.classList.remove('is-masked'); el.readOnly = false; el.disabled = false; el.tabIndex = 0; delete el.dataset.srv;
+    if (clear) el.value = '';
+    el.focus();
+  }
+  function isSrv(id) { var el = $(id); return !!(el && el.dataset.srv === '1'); }
+  function fillFromPermit(info, save) {
+    ['nameBn', 'phone', 'father'].forEach(function (id) { unmaskField(id, false); });
+    $('nameBn').value = info.name; $('phone').value = info.phone; if (info.father) $('father').value = info.father;
+    if (info.gender) $('gender').value = info.gender;
+    if (info.religion) {
+      var rs = $('religion'), has = Array.prototype.some.call(rs.options, function (o) { return o.value === info.religion; });
+      if (has) { rs.value = info.religion; rs.dispatchEvent(new Event('change')); }
+      else { rs.value = '__other'; rs.dispatchEvent(new Event('change')); $('religionOther').value = info.religion; }
+    }
+    [['mother', 2], ['dob', 4]].forEach(function (f) {
+      var el = $(f[0]);
+      if (info.m & f[1]) { el.value = ''; el.dataset.srv = '1'; maskField(f[0], false); }
+      else if (isSrv(f[0])) unmaskField(f[0], true);
+    });
+    if (save) { try { localStorage.setItem('srijon_access_fill', JSON.stringify({ rid: accessId, name: info.name, father: info.father, phone: info.phone, m: info.m, gender: info.gender, religion: info.religion })); } catch (e) {} }
+  }
+  function setApproved(on) {
+    approved = on;
+    $('applySubmit').disabled = !on;
+    $('submitHint').hidden = on;
+    if (on) $('permitBtn').disabled = true;
+    if (on) pStatus('ok-strong', '✔ অনুমোদন পাওয়া গেছে — ফরম পূরণ শেষে এখন “জমা দিন” চাপতে পারেন।');
+  }
+
+  function pCapClear() { var s = $('permitStatus'); if (s.classList.contains('error') && /নিরাপত্তা প্রশ্ন আনা/.test(s.textContent)) pStatus('', ''); }
+  function loadCaptcha() {
+    $('capQ').textContent = '…'; $('capAns').value = ''; capId = '';
+    return post({ action: 'captcha' }).then(function (r) {
+      if (r && r.ok) { capId = r.cid; $('capQ').textContent = r.q; pCapClear(); }
+      else {
+        $('capQ').textContent = '?';
+        pStatus('error', 'নিরাপত্তা প্রশ্ন আনা যায়নি' + (r && r.error ? ' (সার্ভারের উত্তর: ' + r.error + ')' : '') + '। “নতুন প্রশ্ন” চাপুন; না হলে সংগঠনের প্রশাসককে জানান (ব্যাকএন্ড হালনাগাদ লাগতে পারে)।');
+      }
+    }).catch(function (e) {
+      $('capQ').textContent = '?';
+      pStatus('error', 'নিরাপত্তা প্রশ্ন আনা যায়নি (সংযোগ ব্যর্থ)। ইন্টারনেট দেখে “নতুন প্রশ্ন” চাপুন।');
+    });
+  }
+
+  function stopPoll() { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } }
+  function poll() {
+    stopPoll();
+    if (!accessId) return;
+    post({ action: 'access_status', rid: accessId }).then(function (r) {
+      if (!r || !r.ok) {
+        if (r && (r.error === 'not found' || r.error === 'bad id')) { accessId = ''; store(''); pStatus('error', 'অনুরোধটি পাওয়া যায়নি। আবার অনুমতির জন্য পাঠান।'); $('permitBtn').disabled = false; return; }
+        throw new Error('status');
+      }
+      if (r.status === 'approved') { stopPoll(); setApproved(true); return; }
+      if (r.status === 'rejected') { stopPoll(); accessId = ''; store(''); setApproved(false); $('permitBtn').disabled = false; pStatus('error', 'দুঃখিত, আপনার অনুরোধ গৃহীত হয়নি। বিস্তারিত জানতে সংগঠনের সাথে যোগাযোগ করুন।'); loadCaptcha(); return; }
+      if (r.status === 'expired' || r.status === 'used') { stopPoll(); accessId = ''; store(''); setApproved(false); $('permitBtn').disabled = false; pStatus('error', 'এই অনুমতির মেয়াদ শেষ বা ব্যবহৃত হয়েছে। নতুন করে অনুমতির জন্য পাঠান।'); loadCaptcha(); return; }
+      pStatus('info', 'অনুমোদনের অপেক্ষায়… আপনি এই সময়ে নিচের ফরম পূরণ করে রাখতে পারেন। অনুমোদন এলে এখানে জানানো হবে।');
+      pollTimer = setTimeout(poll, 6000);
+    }).catch(function () { pollTimer = setTimeout(poll, 9000); });
+  }
+
+  var PERMIT_ERR = {
+    captcha: 'নিরাপত্তা প্রশ্নের উত্তর ঠিক হয়নি। নতুন প্রশ্নের উত্তর দিন।',
+    limit_phone: 'এই ফোন নম্বরে আজ অনেকবার অনুরোধ করা হয়েছে। কিছুক্ষণ পর বা কাল চেষ্টা করুন।',
+    limit_day: 'আজকের অনুরোধের সীমা শেষ। কাল চেষ্টা করুন বা সংগঠনের সাথে যোগাযোগ করুন।'
+  };
+  $('capRefresh').addEventListener('click', loadCaptcha);
+  $('permitBtn').addEventListener('click', function () {
+    var name = val('permitName'), phone = en(val('permitPhone')).replace(/[\s-]/g, '');
+    var pfather = val('permitFather');
+    if (name.length < 2) { pStatus('error', 'আপনার নাম লিখুন।'); $('permitName').focus(); return; }
+    if (pfather.length < 2) { pStatus('error', 'পিতার নাম লিখুন।'); $('permitFather').focus(); return; }
+    if (!/^\+?\d{7,16}$/.test(phone)) { pStatus('error', 'ফোন নম্বর সঠিক নয়।'); $('permitPhone').focus(); return; }
+    if (!capId || !val('capAns')) { pStatus('error', 'নিরাপত্তা প্রশ্নের উত্তর দিন।'); $('capAns').focus(); return; }
+    var btn = $('permitBtn');
+    btn.disabled = true; pStatus('info', 'অনুরোধ পাঠানো হচ্ছে…');
+    post({ action: 'access_request', name: name, father: pfather, phone: phone, dbRow: dbPick && dbPick.n === name ? dbPick.k : 0, cid: capId, captcha: val('capAns'), website: $('permitWebsite').value }).then(function (r) {
+      if (!r || !r.ok) {
+        var code = r && r.error;
+        pStatus('error', PERMIT_ERR[code] || 'অনুরোধ পাঠানো যায়নি। তথ্য দেখে আবার চেষ্টা করুন।');
+        btn.disabled = false; loadCaptcha(); return;
+      }
+      accessId = r.rid; store(r.rid);
+      fillFromPermit({ name: name, father: r.father || pfather, phone: phone, m: r.m || 0, gender: r.gender || '', religion: r.religion || '' }, true);
+      pStatus('info', 'আপনার অনুরোধ পাঠানো হয়েছে। অনুমোদনের অপেক্ষায়… আপনি এই সময়ে নিচের ফরম পূরণ করে রাখতে পারেন।');
+      pollTimer = setTimeout(poll, 4000);
+    }).catch(function () { pStatus('error', 'ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।'); btn.disabled = false; loadCaptcha(); });
+  });
+
   // ---------- যাচাই ----------
   function fail(id, msg) {
     var el = $(id);
@@ -226,18 +481,20 @@
     if (!val('memberType')) return fail('memberType', 'সদস্য ধরণ নির্বাচন করুন।');
     if (!val('nameBn')) return fail('nameBn', 'নাম (বাংলায়) লিখুন।');
     if (!val('nameEn')) return fail('nameEn', 'নাম (ইংরেজিতে) লিখুন।');
-    if (!val('father')) return fail('father', 'পিতার নাম লিখুন।');
-    if (!val('mother')) return fail('mother', 'মাতার নাম লিখুন।');
-    if (!val('dob')) return fail('dob', 'জন্ম তারিখ নির্বাচন করুন।');
-    if (new Date(val('dob')) > new Date()) return fail('dob', 'জন্ম তারিখ ভবিষ্যতের হতে পারে না।');
-    if (!val('gender')) return fail('gender', 'লিঙ্গ নির্বাচন করুন।');
+    if (!/^[\u0980-\u09FF\u200c\u200d\s.\-]+$/.test(val('nameBn'))) return fail('nameBn', 'নাম (বাংলায়) শুধু বাংলা অক্ষরে লিখুন।');
+    if (!/^[A-Za-z\s.\-']+$/.test(val('nameEn'))) return fail('nameEn', 'নাম (ইংরেজিতে) শুধু ইংরেজি অক্ষরে লিখুন।');
+    if (!isSrv('father') && !val('father')) return fail('father', 'পিতার নাম লিখুন।');
+    if (!isSrv('mother') && !val('mother')) return fail('mother', 'মাতার নাম লিখুন।');
+    if (!isSrv('dob') && !val('dob')) return fail('dob', 'জন্ম তারিখ নির্বাচন করুন।');
+    if (val('dob') && new Date(val('dob')) > new Date()) return fail('dob', 'জন্ম তারিখ ভবিষ্যতের হতে পারে না।');
+    if (!isSrv('gender') && !val('gender')) return fail('gender', 'লিঙ্গ নির্বাচন করুন।');
     if (!val('education')) return fail('education', 'শিক্ষাগত যোগ্যতা নির্বাচন করুন।');
     if (val('education') === '__other' && !val('educationOther')) return fail('educationOther', 'শিক্ষাগত যোগ্যতা লিখুন।');
     if (!val('profession')) return fail('profession', 'পেশা নির্বাচন করুন।');
     if (val('profession') === '__other' && !val('professionOther')) return fail('professionOther', 'পেশা লিখুন।');
-    if (!val('religion')) return fail('religion', 'ধর্ম নির্বাচন করুন।');
-    if (val('reference') !== 'none' && !val('refProof')) return fail('refProof', 'রেফারেন্স প্রমাণক লিখুন।');
-    if (val('religion') === '__other' && !val('religionOther')) return fail('religionOther', 'ধর্ম লিখুন।');
+    if (!isSrv('religion') && !val('religion')) return fail('religion', 'ধর্ম নির্বাচন করুন।');
+    if (val('reference') !== 'none' && !val('refProof')) return fail('refProof', 'সূত্র/সুপারিশ প্রমাণক লিখুন।');
+    if (!isSrv('religion') && val('religion') === '__other' && !val('religionOther')) return fail('religionOther', 'ধর্ম লিখুন।');
     var type = val('memberType');
     var nid = en(val('nid')).replace(/[\s-]/g, '');
     var reg = en(val('birthReg')).replace(/[\s-]/g, '');
@@ -252,20 +509,21 @@
     if (val('email') && !$('email').checkValidity()) return fail('email', 'ইমেইল ঠিকানা সঠিক নয়।');
 
     var blocks = ['perm'];
-    if (form.addrSame.value === 'diff') blocks.push('cur');
+    if (form.addrSame.value === 'diff' && !isExpat()) blocks.push('cur');
     for (var i = 0; i < blocks.length; i++) {
       var p = blocks[i], t = p === 'perm' ? 'স্থায়ী ঠিকানার ' : 'বর্তমান ঠিকানার ';
       if (!val(p + 'Div')) return fail(p + 'Div', t + 'বিভাগ নির্বাচন করুন।');
       if (!val(p + 'Dist')) return fail(p + 'Dist', t + 'জেলা নির্বাচন করুন।');
       if (!val(p + 'Upa')) return fail(p + 'Upa', t + 'উপজেলা/সিটি কর্পোরেশন নির্বাচন করুন।');
       if (!val(p + 'Thana')) return fail(p + 'Thana', t + 'থানা নির্বাচন করুন।');
-      if (!$(p + 'UnionWrap').hidden && !val(p + 'Union')) return fail(p + 'Union', t + 'ইউনিয়ন/পৌরসভা লিখুন।');
+      if (!$(p + 'UnionWrap').hidden && !val(p + 'Union')) return fail(p + 'Union', t + 'ইউনিয়নের নাম লিখুন।');
       if (!$(p + 'WardWrap').hidden && !pickWard(p)) return fail($(p + 'Ward').hidden ? p + 'WardText' : p + 'Ward', t + 'ওয়ার্ড নির্বাচন করুন।');
       if (!pickVal(p + 'PO')) return fail(val(p + 'PO') === '__other' ? p + 'POOther' : p + 'PO', t + 'পোস্ট অফিস নির্বাচন করুন বা লিখুন।');
       if (!pickVal(p + 'Village')) return fail(val(p + 'Village') === '__other' ? p + 'VillageOther' : p + 'Village', t + 'গ্রাম নির্বাচন করুন বা লিখুন।');
       if (val(p + 'Para') === '__other' && !val(p + 'ParaOther')) return fail(p + 'ParaOther', t + 'পাড়ার নাম লিখুন।');
     }
-    if (!val('countryType')) return fail('countryType', 'দেশের নাম নির্বাচন করুন।');
+    if (isExpat() && !val('cfCountry')) return fail('cfCountry', 'বর্তমান বসবাসের দেশ নির্বাচন করুন।');
+    if (!val('countryType')) return fail('countryType', 'বর্তমান বসবাসরত দেশের নাম নির্বাচন করুন।');
     if (val('countryType') === 'abroad' && !val('country')) return fail('country', 'প্রবাসের দেশ নির্বাচন করুন।');
     if (!photoDataUrl) return fail('photo', 'আপনার ছবি দিন।');
     if (!$('agree').checked) return fail('agree', 'অঙ্গীকারনামায় টিক চিহ্ন দিন।');
@@ -284,13 +542,13 @@
   }
   function addrText(a) {
     return [a.para && 'পাড়া: ' + a.para, 'গ্রাম: ' + a.village, 'পোস্ট অফিস: ' + a.po,
-      a.union && 'ইউনিয়ন/পৌরসভা: ' + a.union, a.ward && 'ওয়ার্ড: ' + a.ward,
+      a.union && 'ইউনিয়ন: ' + a.union + ' ইউনিয়ন পরিষদ', a.ward && 'ওয়ার্ড: ' + a.ward,
       'থানা: ' + a.thana, a.upa, 'জেলা: ' + a.dist, a.div + ' বিভাগ'].filter(Boolean).join(', ');
   }
   function collect() {
     var perm = addr('perm');
-    var same = form.addrSame.value !== 'diff';
-    var cur = same ? perm : addr('cur');
+    var ex = isExpat(), same = !ex && form.addrSame.value !== 'diff';
+    var cur = ex ? foreignAddr() : (same ? perm : addr('cur'));
     var dob = val('dob').split('-');                       // yyyy-mm-dd
     return {
       memberType: val('memberType'),
@@ -304,7 +562,7 @@
       father: val('father'),
       mother: val('mother'),
       dob: val('dob'),
-      dobText: bn(dob[2] + '/' + dob[1] + '/' + dob[0]),
+      dobText: dob.length === 3 ? bn(dob[2] + '/' + dob[1] + '/' + dob[0]) : '',
       gender: val('gender'),
       blood: val('blood'),
       education: val('education') === '__other' ? val('educationOther') : val('education'),
@@ -318,10 +576,11 @@
       perm: perm,
       addrSame: same,
       cur: cur,
-      currentText: same ? 'স্থায়ী ঠিকানার অনুরূপ' : addrText(cur),
+      currentText: same ? 'স্থায়ী ঠিকানার অনুরূপ' : (ex ? foreignText(cur) : addrText(cur)),
       country: val('countryType') === 'abroad' ? val('country') : 'বাংলাদেশ',
       countryType: val('countryType') === 'abroad' ? 'প্রবাসী' : 'বাংলাদেশ',
-      website: form.website.value
+      website: form.website.value,
+      accessId: accessId
     };
   }
 
@@ -358,6 +617,7 @@
     if (busy) return;
     if (form.website.value) return;                        // হানিপট
     if (!geo) { setStatus('error', 'পেইজ লোড সম্পূর্ণ হয়নি, কিছুক্ষণ পর আবার চেষ্টা করুন।'); return; }
+    if (!approved || !accessId) { setStatus('error', 'অনুমতি পাওয়ার পর জমা দেওয়া যাবে। উপরে “অনুমতি নিন” অংশ দেখুন।'); return; }
     if (!validate()) return;
 
     var data = collect();
@@ -367,16 +627,16 @@
 
     var serverInfo;
     post({ action: 'submit', data: data }).then(function (res) {
-      if (!res || !res.ok) throw new Error((res && res.error) || 'submit failed');
+      if (!res || !res.ok) { var ee = new Error((res && res.error) || 'submit failed'); ee.code = res && res.error; throw ee; }
       serverInfo = res;
       setStatus('info', 'পিডিএফ তৈরি হচ্ছে…');
       var pdfData = {
-        formNo: res.formNo, memberNo: '', feeText: data.feeText, memberType: data.memberType, referenceLabel: data.referenceLabel, referenceProof: data.referenceProof,
-        nameBn: data.nameBn, nameEn: data.nameEn, father: data.father, mother: data.mother,
-        dobText: data.dobText, gender: data.gender, blood: shortBlood(data.blood),
-        education: data.education, profession: data.profession, religion: data.religion,
-        nid: bn(data.nid), birthReg: bn(data.birthReg), phone: bn(data.phone), whatsapp: bn(data.whatsapp), email: data.email,
-        perm: data.perm, currentText: data.currentText, country: data.country,
+        formNo: res.formNo, memberNo: '', feeText: data.feeText, reference: data.reference, discount: data.reference && data.reference !== 'none', memberType: data.memberType, referenceLabel: data.referenceLabel, referenceProof: data.referenceProof, countryType: data.countryType,
+        nameBn: data.nameBn, nameEn: data.nameEn, father: data.father || (res.prefill && res.prefill.father) || '', mother: data.mother || (res.prefill && res.prefill.mother) || '',
+        dobText: data.dobText || (res.prefill && res.prefill.dob ? (function (a) { return bn(a[2] + '/' + a[1] + '/' + a[0]); })(res.prefill.dob.split('-')) : ''), gender: data.gender || (res.prefill && res.prefill.gender) || '', blood: shortBlood(data.blood),
+        education: data.education, profession: data.profession, religion: data.religion || (res.prefill && res.prefill.religion) || '',
+        nid: data.nid, birthReg: data.birthReg, phone: data.phone, whatsapp: data.whatsapp, email: data.email,
+        perm: data.perm, cur: data.cur, currentText: data.currentText, country: data.country,
         photoDataUrl: photoDataUrl, timestampEn: enStamp(res.timestamp)
       };
       return window.SrijonPDF.build(pdfData);
@@ -387,6 +647,8 @@
       var dl = $('downloadPdf');
       dl.href = url; dl.setAttribute('download', fname);
       form.hidden = true;
+      $('permitBox').hidden = true;
+      store(''); stopPoll();
       $('applySuccess').hidden = false;
       $('applySuccess').scrollIntoView({ behavior: 'smooth', block: 'start' });
       triggerDownload(url, fname);
@@ -427,12 +689,27 @@
       if (serverInfo) {
         setStatus('error', 'আপনার আবেদন গৃহীত হয়েছে (ফরম নম্বর: ' + serverInfo.formNo + ') কিন্তু পিডিএফ তৈরি করা যায়নি। ফরম নম্বরটি সংরক্ষণ করে সংগঠনের সাথে যোগাযোগ করুন।');
       } else {
-        setStatus('error', 'দুঃখিত, আবেদন জমা হয়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।' + (err && err.message && /[a-z]/i.test(err.message) ? '' : ' ' + (err.message || '')));
+        if (err && err.code === 'permission') {
+          approved = false; accessId = ''; store(''); setApproved(false); $('permitBtn').disabled = false; loadCaptcha();
+          setStatus('error', 'আপনার অনুমতি পাওয়া যায়নি বা মেয়াদ শেষ হয়েছে। উপরে নতুন করে অনুমতি নিন; আপনার পূরণ করা ফরম অক্ষত আছে।');
+          pStatus('error', 'অনুমতির মেয়াদ শেষ বা ব্যবহৃত। নতুন করে অনুমতির জন্য পাঠান।');
+        } else if (err && err.code === 'duplicate') {
+          setStatus('error', 'এই সদস্য ধরণে একই এনআইডি/জন্মনিবন্ধন নম্বর দিয়ে ইতোমধ্যে আবেদন করা হয়েছে। অন্য সদস্য ধরণে আবেদন করা যাবে। প্রয়োজনে সংগঠনের সাথে যোগাযোগ করুন।');
+        } else setStatus('error', 'দুঃখিত, আবেদন জমা হয়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।' + (err && err.message && /[a-z]/i.test(err.message) ? '' : ' ' + (err.message || '')));
       }
     }).then(function () {
-      busy = false; btn.disabled = false;
+      busy = false; btn.disabled = !approved;
     });
   });
+
+  // শুরু: ক্যাপচা লোড, আগের অনুরোধ থাকলে চালিয়ে যাওয়া
+  loadCaptcha();
+  accessId = stored();
+  try {
+    var sv = JSON.parse(localStorage.getItem('srijon_access_fill') || 'null');
+    if (sv && sv.rid && sv.rid === accessId) fillFromPermit(sv, false);
+  } catch (e) {}
+  if (accessId) { $('permitBtn').disabled = true; pStatus('info', 'আপনার আগের অনুরোধের অবস্থা দেখা হচ্ছে…'); poll(); }
 
   loadGeo().catch(function () {
     setStatus('error', 'ঠিকানার তালিকা লোড করা যায়নি। পেইজটি রিফ্রেশ করুন।');

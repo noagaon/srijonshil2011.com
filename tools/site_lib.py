@@ -158,7 +158,7 @@ def head(title, root, desc=None, is_home=False):
 <link rel="icon" type="image/png" href="%(root)sassets/img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Noto+Serif+Bengali:wght@400;500;600;700&family=Atma:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="%(root)sassets/css/style.css">
 </head>
 ''' % {'title': esc(full_title), 'desc': d, 'root': root}
@@ -225,17 +225,17 @@ def footer(root):
        'mail': ICONS['mail'], 'email': SITE['email'], 'fb': ICONS['facebook'], 'fbl': SITE['facebook'], 'pin': ICONS['pin']}
 
 
-def page(slug, body, extra_scripts=''):
-    title = MENU_TITLE[slug]
+def page(slug, body, extra_scripts='', title=None, parent=None):
+    title = title or MENU_TITLE[slug]
     root = '../'
     out = head(title, root) + header(root, slug)
     out += '''<section class="page-hero"><div class="wrap">
-  <nav class="crumbs" aria-label="ব্রেডক্রাম্ব"><a href="../index.html">হোম</a> <span>›</span> <span>%s</span></nav>
+  <nav class="crumbs" aria-label="ব্রেডক্রাম্ব"><a href="../index.html">হোম</a> <span>›</span> %s<span>%s</span></nav>
   <h1>%s</h1>
 </div></section>
 <div class="wrap page-body">
 %s
 </div>
-''' % (esc(title), esc(title), body)
+''' % (('<a href="%s.html">%s</a> <span>›</span> ' % (parent, esc(MENU_TITLE[parent]))) if parent else '', esc(title), esc(title), body)
     out += footer(root) % {'extra': extra_scripts}
     return out
